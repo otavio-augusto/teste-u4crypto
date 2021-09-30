@@ -1,0 +1,141 @@
+#+TITLE: Teste U4crypto
+
+* Modelagem do Sistema
+Sistema será modelado de acordo com os requisitos especificados no e-mail enviado durante a entrevista, e que estão transcritos abaixo de forma simplificada e condizente com o Diagrama de Classes.
+
+** Requisitos
+- [X] Criar classes =Cliente= e =Terceiro=;
+- [X] =Cliente= pode criar uma conta inserindo informações básicas de cadastro;
+- [X] =Cliente= pode editar certos dados do cadastro;
+- [X] =Cliente= pode criar um =Acidente=, informando o =Veiculo= e =Terceiros= envolvidos;
+- [X] =Terceiros= são cadastrados quando é criado o =Acidente=, caso não exista registro prévio;
+- [X] =Clientes= e =Terceiros= precisam ter =Documentos= anexados em suas contas;
+- [X] Quando um =Cliente= previamente cadastrado como =Terceiro= for criado, seus dados precisam ser migrados, sem perder vínculos de =Acidentes= anteriores;
+** Diagrama de Classes
+#+begin_src plantuml :exports results :file .imagens/imagem1.png
+@startuml
+abstract class Pessoa {
+  +cpf : int
+  +nome : string
+  +email : string
+  +telefone : int
+  +endereco : string
+  +idDocumento : int[]
+  +idAcidente : int[]
+  +void {abstract} cadastrar()
+  +void anexarDocumento()
+}
+
+class Cliente extends Pessoa{
+  +idVeiculo : int[]
+  +void cadastrar()
+  +void atualizarDados()
+  +void cadastrarAcidente()
+}
+
+class Terceiro extends Pessoa{
+  +void cadastrar()
+  +void migrarParaCliente()
+}
+
+class Documento{
+  +idDocumento : int
+  +idCliente : int
+  +url : string
+}
+
+class Veiculo{
+  +placa : string
+  +chassi : string
+  +modelo : string
+  +ano : string
+}
+
+note left of Veiculo::ano
+  String caso o veiculo
+  possua ano de fabricação
+  e ano de modelo diferentes,
+  por exemplo, 2018/2019.
+end note
+
+class Acidente{
+  +idAcidente : int
+  +idCliente : int
+  +idCarro : int
+  +idTerceiro : int[]
+  +void cadastrarAcidente()
+}
+
+Acidente --- Cliente
+Acidente --- Terceiro
+Acidente -left- Veiculo
+
+Documento -up- Pessoa
+Cliente -up- Veiculo
+
+@enduml
+#+end_src
+#+RESULTS:
+[[file:.imagens/imagem1.png]]
+
+A classe abstrata =Pessoa= é herdada pelas classes =Cliente= e =Terceiro=, ambas que são cadastradas em um eventual acidente. A classe =Cliente= possui uma lista de veículos, vinda da classe =Veiculo= que também é registrada na classe =Acidente=.
+
+A classe =Documento= se refere a qualquer numero de documentos de uma =Pessoa=, tanto cliente quanto terceiro, que esteja cadastrado no sistema.
+** Diagrama Caso de Uso
+| Atores    | Banco de dados, Cliente                                                                                                                                                                                                         |
+| Descrição | Um usuário pode cadastrar uma conta, alterar os dados da mesma ou cadastrar um acidente. Quando um usuário já possui dados como o terceiro em um acidente o Banco de dados deve migrar esses dados para a nova conta de cliente |
+| Dados     | Informações básicas dos clientes, terceiros e veículos envolvidos em acidente                                                                                                                                                   |
+| Resposta  | Confirmação de criação de conta ou de criação de acidente.                                                                                                                                                                      |
+O usuário tem a função de cadastrar sua propria conta, cadastrar seus documentos, acidentes e eventuais terceiros, exceto em casos onde um dos envolvidos possui cadastro prévio.
+#+begin_src plantuml :exports results :file .imagens/imagem3.png
+@startuml
+"Usuário" as usuario
+"Banco de dados" as bancoDados
+(Cadastrar usuário) as (cadastrarUsuario)
+usuario --> (cadastrarUsuario)
+usuario --> (Alterar dados cadastrais)
+(Cadastrar acidente) as (cadastrarAcidente)
+usuario --> (cadastrarAcidente)
+(cadastrarAcidente) <|-- (Cadastrar terceiro)
+(Migrar dados de terceiro) as (migrarDados)
+(bancoDados) --> (migrarDados)
+(migrarDados) <|-- (cadastrarUsuario)
+@enduml
+#+end_src
+#+RESULTS:
+[[file:.imagens/imagem3.png]]
+
+** Diagrama de Atividade
+A atividade abaixo se refere ao cadastro de um acidente, e tem os seguintes passos:
+1. O usuário acessa a aplicação;
+2. Caso o usuário já possua cadastro ele faz o login, caso contrario cria uma nova conta;
+3. O acidente é cadastrado, juntamente as informações sobre terceiros e veículos envolvidos;
+4. Caso o terceiro já esteja cadastrado no sistema, os seus dados são recuperados, caso contrario um novo terceiro é cadastrado;
+5. O acidente é efetivamente cadastrado no sistema.
+
+#+begin_src plantuml :exports results :file .imagens/imagem2.png
+@startuml
+(*) --> "Acesso a Aplicação"
+
+if "Usuário é cadastrado?" then
+  -->[sim] "Cadastrar Acidente" as a1
+  if "Terceiro é cadastrado?" then
+    -->[sim] "Recuperar dados do Terceiro"
+    --> (*)
+  else
+    -->[não] "Cadastrar Terceiro"
+    --> (*)
+  endif
+else
+  ->[não] "Cadastrar Usuário"
+  --> a1
+endif
+
+@enduml
+#+end_src
+#+RESULTS:
+[[file:.imagens/imagem2.png]]
+
+
+* TODO Criação da API
+API será criada baseada nos requisitos especificados no e-mail enviado durante a entrevista.
